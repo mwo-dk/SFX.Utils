@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>SFX.Utils.CSharp</AssemblyName>
+
+    <RootNamespace>SFX.Utils.CSharp</RootNamespace>
+    <PackageId>SFX.Utils.CSharp</PackageId>
+    <Version>1.0.0</Version>
+    <IsPackable>true</IsPackable>
+
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Authors>Michael W. Olesen</Authors>
+    <Company>-</Company>
+    <Description>A small library facilitating simple utility interfaces and classes</Description>
+    <Copyright>Michael W. Olesen</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/mwo-dk/SFX.Utils</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mwo-dk/SFX.Utils</RepositoryUrl>
+    <PackageTags>utilities</PackageTags>
+  </PropertyGroup>
+
+</Project>

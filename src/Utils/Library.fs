@@ -31,6 +31,9 @@ module HashHelpers =
     | B of byte array
     | I of int array
     | O of obj array
+    let byteArray = B
+    let intArray = I
+    let objArray = O
 
     let hash x =
         match x with
@@ -46,14 +49,14 @@ module DateTime =
 
     let getUtcNow() = DateTimeOffset.UtcNow
   
-    let createDateTimeProvider = new DateTimeProvider()
+    let createDateTimeProvider() = DateTimeProvider()
 
 module Timer =
     open Microsoft.FSharp.Core
     open System
 
-    let private timerProvider = new TimerProvider()
-    let createTimerProvider() = new TimerProvider()
+    let private timerProvider = TimerProvider()
+    let createTimerProvider() = TimerProvider()
 
     let createTimer interval (handler: unit -> unit) autoStart =
         timerProvider.Create(interval, System.Action(handler), autoStart)
@@ -82,6 +85,8 @@ module Initializable =
     type InitializableObject =
     | Sync of IInitializable
     | Async of IAsyncInitializable
+    let sync = Sync
+    let async = Async
 
     type InitializationError =
     | InitializationFailed of exn
@@ -89,8 +94,8 @@ module Initializable =
 
     let initialize x =
         match x with
-        | Sync x -> tryCatch (fun _ -> x.Initialize()) InitializationFailed
-        | Async x -> tryCatch (fun _ -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously) InitializationFailed
+        | Sync x -> tryCatch (fun _ -> x.Initialize()) (fun error -> error |> InitializationFailed)
+        | Async x -> tryCatch (fun _ -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously) (fun error -> error |> InitializationFailed)
 
     let isInitialized x =
         match x with
@@ -109,5 +114,5 @@ module Initializer =
     
     let initialize x =
         match x with
-        | Sync x -> tryCatch (fun _ -> x.Initialize()) InitializationFailed
-        | Async x -> tryCatch (fun _ -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously) InitializationFailed
+        | Sync x -> tryCatch (fun _ -> x.Initialize()) id
+        | Async x -> tryCatch (fun _ -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously) id

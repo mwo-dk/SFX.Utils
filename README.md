@@ -1,151 +1,118 @@
-# SFX.Utils
+namespace SFX.Utils
 
-Basic helper routines. The repository contains packages for F# as well as C#, and are exposed in the nuget packages [SFX.Utils](https://www.nuget.org/packages/SFX.Utils/)
-and [SFX.Utils.CSharp](https://www.nuget.org/packages/SFX.Utils.CSharp/) respectively.
+open SFX.ROP
+open SFX.Utils.Infrastructure
 
-## Usage C#
+module StringHelpers =
+    open System
 
-The C# library is basically a small collection of helper classes and interfaces (neat when using then in a DI context and faking etc), and deal can be grouped into three scopes:
+    let isNullOrEmpty = String.IsNullOrEmpty
+    let isNullOrWhiteSpace = String.IsNullOrWhiteSpace
 
-* Time. Helpers to work with actual time and timers.
-* Initialization. Helper interfaces and a single class to let instances initialize themselves or others.
-* Hash code
+module HashHelpers =
+    type HashErrors = 
+    | IsNull
+    | IsEmpty
 
-### Time
+    let inline private hash' prime1 prime2 x = 
+        x |> Array.fold (fun acc n -> acc*prime2 + n) prime1
+    let inline private hash'' prime1 prime2 x =
+        match x = null with
+        | false ->
+            match x |> Array.isEmpty with
+            | false -> x |> hash' prime1 prime2 |> succeed
+            | true -> IsEmpty |> fail
+        | true -> IsNull |> fail
+    let inline private hash''' x = x |> hash'' 19 31
+    let inline private hash'''' (convert: 'a -> int) x =
+        x |> Array.map convert |> hash'''
 
-This small collection, deals with date time and timers.
+    type HashArgs =
+    | B of byte array
+    | I of int array
+    | O of obj array
+    let byteArray = B
+    let intArray = I
+    let objArray = O
 
-#### (I)DateTimeProvider
+    let hash x =
+        match x with
+        | B x -> x |> hash'''' (fun b -> int(b))
+        | I x -> x |> hash'''
+        | O x -> 
+            match x = null with
+            | false -> x |> Array.map (fun x -> x.GetHashCode()) |> hash'''
+            | true -> IsNull |> fail
 
-The ```IDateTimeProvider``` is a simple interface, that can deliver the current ```DateTimeOffset``` in UTC:
+module DateTime =
+    open System
 
-``` csharp
-public interface IDateTimeProvider
-{
-    DateTimeOffset GetUtcNow();
-}
-```
+    let getUtcNow() = DateTimeOffset.UtcNow
+  
+    let createDateTimeProvider() = DateTimeProvider()
 
-Not the hardest interface, and even the youngest develper can figure out it's implementation. It's done many other places and in other ways, searching faking time or asking Rx how to deal with it, gives a lot of good and more advanced options. I like it, because it's simple to fake it in tests.
+module Timer =
+    open Microsoft.FSharp.Core
+    open System
 
-#### (I)Timer and (I)TimerProvider
+    let private timerProvider = TimerProvider()
+    let createTimerProvider() = TimerProvider()
 
-Similar to ```IDateTimeProvider``` an abstraction over timers and providers thereof have been provided in:
+    let createTimer interval (handler: unit -> unit) autoStart =
+        timerProvider.Create(interval, System.Action(handler), autoStart)
 
-``` csharp
-public interface ITimer : IDisposable
-{
-    void Start();
-    void Stop();
-}
+    type TimerError =
+    | TimerDisposed
+    | Other of exn
 
-public interface ITimerProvider
-{
-    ITimer Create(TimeSpan interval, Action handler, bool autoStart);
-}
-```
+    let startTimer (timer: ITimer) =
+        try
+            timer.Start() |> succeed
+        with
+        | :? ObjectDisposedException -> TimerDisposed |> fail
+        | exn -> exn |> Other |> fail
 
-Again very simple. Testable, and the implementation provided in ```Timer``` and ```TimerProvider``` rely on ```System.Threading.Timer```, which is good in servers, but the other timers available can be implemented for as well.
+    let stopTimer (timer: ITimer) =
+        try
+            timer.Stop() |> succeed
+        with
+        | :? ObjectDisposedException -> TimerDisposed |> fail
+        | exn -> exn |> Other |> fail
 
-### Initialization
+    let closeTimer (timer: ITimer) = timer.Dispose()
 
-The notion of post 'construction' initialization is convenient, ie in scenarios where you hook up a large application and then want to start things - throwing exceptions upon object initialization (object construction) or even to heavy processing is a mess there. Then it is simpler to hook up things in a manner:
+module Initializable =
+    type InitializableObject =
+    | Sync of IInitializable
+    | Async of IAsyncInitializable
+    let sync = Sync
+    let async = Async
 
-``` csharp
-using static System.Threading.Interlocked;
+    type InitializationError =
+    | InitializationFailed of exn
+    | InitializationCheckFailed of exn
 
-public sealed class SomeAggregatedService : IInitializable 
-{
-    private static readonly ObjectName = typeof(SomeAggregatedService).FullName;
+    let initialize x =
+        match x with
+        | Sync x -> tryCatch (fun _ -> x.Initialize()) (fun error -> error |> InitializationFailed)
+        | Async x -> tryCatch (fun _ -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously) (fun error -> error |> InitializationFailed)
 
-    public SomeAggregatedService(ISomeDependency someDependency, IAnotherDependency anotherDependency) =>
-        (SomeDependency, AnotherDependency) = 
-            (someDependency ?? throw new ArgumentNullException(nameof(someDependency), anotherdependency ?? throw new ArgumentNullException(nameof(anotherDependency))));
+    let isInitialized x =
+        match x with
+        | Sync x -> tryCatch (fun _ -> x.IsInitialized()) InitializationCheckFailed
+        | Async x -> tryCatch (fun _ -> x.IsInitialized()) InitializationCheckFailed
+
+module Initializer =
+
+    type InitializerObject =
+    | Sync of IInitializer
+    | Async of IAsyncInitializer
+
+    type InitializationError =
+    | InitializationFailed of exn
+    | InitializationCheckFailed of exn
     
-    internal ISomeDependency SomeDependency {get;} // Internal - easier to test
-    internal IAnotherDependency AnotherDependency {get;}
-
-    internal long IsInitializationRunningCount = 0L;
-    internal long IsInitializedCount = 0L;
-    public void Initialize() 
-    {
-        try 
-        {
-            if (1L < Increment(ref IsInitializationRunningCount) || IsInitialized())
-                return;
-
-            // Do the heavy lifting...
-
-            Increment(ref IsInitializedCount);
-        }
-        finally 
-        {
-            Decrement(ref IsInitializationRunningCount);
-        }
-    }
-    public bool IsInitialized() => 0L < Read(ref IsInitializedCount);
-
-    public void ServiceSomeOne() 
-    {
-        if (!IsInitialized())
-            throw new InvalidOperationException($"{ObjectName} is not initialized");
-
-        // Do the servicing
-    }
-}
-``` 
-
-This is where the interfaces:
-
-``` csharp
-public interface IInitializable
-{
-    void Initialize();
-    bool IsInitialized();
-}
-public interface IAsyncInitializable
-{
-    Task InitializeAsync();
-    bool IsInitialized();
-}
-``` 
-
-come in handy, wrt wiring up the monolith. Similarly interfaces for wiring up others have been provided:
-
-``` csharp
-public interface IInitializer
-{
-    void Initialize();
-}
-public interface IAsyncInitializer
-{
-    Task InitializeAsync();
-}
-```
-### Hash codes
-
-The static class ```SFX.Utils.Infrastructure.HashCodeHelpers``` is just a simple wrapper for doing the standard way of computing the hashcode of complex objects utilizing the primes 19 and 31. The methods are:
-
-* ```ComputeHashCode(this int[] items) -> int```
-* ```ComputeHashCode<T>(this T[] items, Func<T, int> getHash) -> int```
-* ```ComputeHashCode<T>(this IEnumerable<T> items, Func<T, int> getHash) -> int```
-* ```ComputeHashCodeForObjectArray(params object[] items) -> int```
-
-It should be fairly self-explanatory. Why provide a library for this? Reason is, that I myself often have been working with large in memory caches where ie. the key's have been fairly complex, so:
-
-* Pre-calculating the hash of these (immutable) objects upon (maybe) construction, returning that value in ```GetHashCode()``` and then 
-* Override ```IEquatable<>``` makes doing this convenient.
-
-## Usage F#
-
-The F# library delivers a few modules that essentially mostly wrap the C# library.
-
-### SFX.Utils.StringHelpers
-f
-### SFX.Utils.HashHelpers
-d
-### SFX.Utils.DateTime
-f
-### SFX.Utils.Timer
-f
-### SFX.Utils.Initializable
+    let initialize x =
+        match x with
+        | Sync x -> tryCatch (fun _ -> x.Initialize()) id
+        | Async x -> tryCatch (fun _ -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously) id

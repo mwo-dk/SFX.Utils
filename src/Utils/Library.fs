@@ -76,7 +76,7 @@ module Initializer =
         let doInitialize x =
             match x with
             | Sync x -> x.Initialize()
-            | Async x -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously)
+            | Async x -> x.InitializeAsync() |> Async.AwaitTask |> Async.RunSynchronously
         tryCatch doInitialize id        
 
 module HashHelpers =

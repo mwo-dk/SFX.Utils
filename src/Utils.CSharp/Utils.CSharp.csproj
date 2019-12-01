@@ -6,7 +6,7 @@
 
     <RootNamespace>SFX.Utils.CSharp</RootNamespace>
     <PackageId>SFX.Utils.CSharp</PackageId>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <IsPackable>true</IsPackable>
 
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

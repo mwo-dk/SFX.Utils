@@ -140,12 +140,98 @@ It should be fairly self-explanatory. Why provide a library for this? Reason is,
 
 The F# library delivers a few modules that essentially mostly wrap the C# library.
 
-### SFX.Utils.StringHelpers
-f
-### SFX.Utils.HashHelpers
-d
 ### SFX.Utils.DateTime
-f
+The ```DateTime``` module is simply a wrapper around the similar methods in the corresponding C# library:
+
+* ```getUtcNow: unit -> DateTimeOffset```, and
+* ```createDateTimeProvider: unit -> DateTimeProvider```
+
+which do what you would expect.
+
 ### SFX.Utils.Timer
-f
+The ```Timer``` module is also a more functional wrapper around the timer library:
+
+* ```createTimerProvider: unit -> TimerProvider```, creates a new ```TimerProvider```.
+* ```createTimer: TimeSpan -> (unit -> unit) -> bool -> ITimer```, creates a new ```ITimer```, where the first argument is the period, the second the handler and the last argument is a flag telling whether to automatically start the timer.
+* ```startTimer: ITimer -> Result<unit, TimerError>```, starts a timer.
+* ```stopTimer: ITimer -> Result<unit, TimerError>```, stops a timer.
+* ```closeTimer: ITimer -> unit```, disposes off a timer.
+
+where ```TimerError``` is:
+
+``` fsharp
+type TimerError =
+| TimerDisposed
+| Other of exn
+```
+
+Mind that ```ITimer``` is ```IDisposable```. 
+
 ### SFX.Utils.Initializable
+The ```Initializable``` module contains two functions:
+
+* ```initialize: InitializableObject -> Result<unit, InitializationError>```
+* ```isInitialized: InitializableObject -> Result<bool, InitializationError>```
+
+where ```InitializableObject``` is the sum over ```IInitializable``` and ```IAsyncInitializable```:
+
+``` fsharp
+type InitializableObject =
+| Sync of IInitializable
+| Async of IAsyncInitializable
+let sync = Sync
+let async = Async
+```
+
+and ```InitializationError``` is:
+
+``` fsharp
+type InitializationError =
+| InitializationFailed of exn
+| InitializationCheckFailed of exn
+```
+
+### SFX.Utils.Initializer
+The ```Initializer``` module is similar to ```Initializable```:
+
+* ```initialize: InitializerObject -> Result<unit, exn>```
+
+where ```InitializerObject``` is the sum over ```IInitializer``` and ```IAsyncInitializer```:
+
+``` fsharp
+type InitializerObject =
+| Sync of IInitializer
+| Async of IAsyncInitializer
+```
+### SFX.Utils.HashHelpers
+The ```HashHelpers``` module simply provides a hashing function with the primes 19 and 31:
+
+* ```hash: HashArgs -> Result<int, HashError>```
+
+where
+
+```HashArgs``` is:
+
+``` fsharp
+type HashArgs =
+| B of byte array
+| I of int array
+| O of obj array
+let byteArray = B
+let intArray = I
+let objArray = O
+```
+
+and ```HashError``` is:
+
+``` fsharp
+type HashError = 
+| IsNull
+| IsEmpty
+```
+
+### SFX.Utils.StringHelpers
+The ```StringHelpers``` simply wraps two commonly used members of ```System.String```:
+
+* ```isNullOrEmpty: string -> bool``` and
+* ```isNullOrWhiteSpace: string -> bool```

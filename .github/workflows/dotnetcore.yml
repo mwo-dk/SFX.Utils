@@ -27,8 +27,8 @@ jobs:
         dotnet pack ./src/Utils/Utils.fsproj --configuration Release -o ./nuget
     - name: Deploy C# NuGet Package
       run: 
-        dotnet nuget push /home/runner/work/SFX.Utils/SFX.Utils/nuget/SFX.Utils.CSharp.1.0.5.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+        dotnet nuget push /home/runner/work/SFX.Utils/SFX.Utils/nuget/SFX.Utils.CSharp.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
     - name: Deploy F# NuGet Package
       run:  
-        dotnet nuget push /home/runner/work/SFX.Utils/SFX.Utils/nuget/SFX.Utils.1.0.5.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
+        dotnet nuget push /home/runner/work/SFX.Utils/SFX.Utils/nuget/SFX.Utils.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }}
 

@@ -6,7 +6,9 @@
 
     <RootNamespace>SFX.Utils</RootNamespace>
     <PackageId>SFX.Utils</PackageId>
-    <Version>1.0.5</Version>
+    <Version>$(Version)</Version>
+    <FileVersion>$(Version)</FileVersion>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
     <IsPackable>true</IsPackable>
 
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

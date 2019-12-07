@@ -40,6 +40,7 @@ module Timer =
         timerProvider.Create(interval, System.Action(handler), autoStart) |> toRop
 
     type TimerError =
+    | Null
     | TimerDisposed
     | Other of exn
 
@@ -47,14 +48,13 @@ module Timer =
         if x.Error |> isNull then x.Error |> Other |> fail
         else x.Value |> succeed
     let startTimer (timer: ITimer) =
-        if timer |> isNull then ArgumentNullException("timer") :> exn |> Other |> fail
+        if timer |> isNull then Null |> fail
         else timer.Start() |> toRop
     let stopTimer (timer: ITimer) =
-        if timer |> isNull then ArgumentNullException("timer") :> exn |> Other |> fail
+        if timer |> isNull then Null |> fail
         else timer.Stop() |> toRop
-
     let closeTimer (timer: ITimer) = 
-        if timer |> isNull then ArgumentNullException("timer") :> exn |> Other |> fail
+        if timer |> isNull then Null |> fail
         else timer.Dispose() |> succeed
 
 module Initializable =

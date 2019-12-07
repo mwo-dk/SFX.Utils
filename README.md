@@ -169,24 +169,24 @@ It should be fairly self-explanatory. Why provide a library for this? Reason is,
 ```OperationResult<>``` is a simple structure, that enables various invocation patterns, not entirely unlike ```Nullable<>```. Its total implementation is:
 
 ``` csharp
-    public struct OperationResult<T>
+public struct OperationResult<T>
+{
+    internal OperationResult(Exception error, T value) =>
+        (Error, Value) = (error, value);
+
+    public Exception Error { get; }
+    public T Value { get; }
+
+    public void Deconstruct(out bool success, out Exception error, out T value) =>
+        (success, error, value) = (Error is null, Error, Value);
+
+    public static implicit operator T(OperationResult<T> x)
     {
-        internal OperationResult(Exception error, T value) =>
-            (Error, Value) = (error, value);
-
-        public Exception Error { get; }
-        public T Value { get; }
-
-        public void Deconstruct(out bool success, out Exception error, out T value) =>
-            (success, error, value) = (Error is null, Error, Value);
-
-        public static implicit operator T(OperationResult<T> x)
-        {
-            if (!(x.Error is null))
-                throw x.Error;
-            else return x.Value;
-        }
+        if (!(x.Error is null))
+            throw x.Error;
+        else return x.Value;
     }
+}
 ```
 
 That is: it can either represent a successfull or a failing result. As can be seen, it supports tuple deconstruction, meaning that:

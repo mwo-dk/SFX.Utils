@@ -29,35 +29,51 @@ namespace SFX.Utils.Infrastructure
 
         internal long StartCount;
         /// <inheritdoc/>
-        public void Start()
+        public OperationResult<Unit> Start()
         {
             if (IsDisposed())
-                throw new ObjectDisposedException(ObjectName);
+                return new OperationResult<Unit>(new ObjectDisposedException(ObjectName), default);
 
             if (1L < Increment(ref StartCount))
             {
                 Decrement(ref StartCount);
-                return;
+                return new OperationResult<Unit>(default, Unit.Value);
             }
 
-            InnerTimer = new System.Threading.Timer(new System.Threading.TimerCallback(_ => Handler()),
-                default, TimeSpan.Zero, Interval);
+            try
+            {
+                InnerTimer = new System.Threading.Timer(new System.Threading.TimerCallback(_ => Handler()),
+                    default, TimeSpan.Zero, Interval);
+                return new OperationResult<Unit>(default, Unit.Value);
+            }
+            catch (Exception error)
+            {
+                return new OperationResult<Unit>(error, default);
+            }
         }
 
         /// <inheritdoc/>
-        public void Stop()
+        public OperationResult<Unit> Stop()
         {
             if (IsDisposed())
-                throw new ObjectDisposedException(ObjectName);
+                return new OperationResult<Unit>(new ObjectDisposedException(ObjectName), default);
 
             if (Decrement(ref StartCount) < 0L)
             {
                 Increment(ref StartCount);
-                return;
+                return new OperationResult<Unit>(default, Unit.Value);
             }
 
-            InnerTimer.Dispose();
-            InnerTimer = default;
+            try
+            {
+                InnerTimer.Dispose();
+                InnerTimer = default;
+                return new OperationResult<Unit>(default, Unit.Value);
+            }
+            catch (Exception error)
+            {
+                return new OperationResult<Unit>(error, default);
+            }
         }
 
         internal long DisposeCount;

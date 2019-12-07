@@ -32,11 +32,17 @@ namespace SFX.Utils.Test.Unit.Infrastructure
 
         [Fact]
         public void ComputeHashCode_With_Null_Array_Throws() =>
-            Assert.Throws<ArgumentNullException>(() => (null as int[]).ComputeHashCode(_prime1, _prime2));
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                int n = (null as int[]).ComputeHashCode(_prime1, _prime2);
+            });
 
         [Fact]
         public void ComputeHashCode_With_Empty_Array_Works() =>
-            Assert.Throws<ArgumentException>(() => (new int[] { }).ComputeHashCode(_prime1, _prime2));
+            Assert.Throws<ArgumentException>(() =>
+            {
+                int n = (new int[] { }).ComputeHashCode(_prime1, _prime2);
+            });
 
         [Fact]
         public void ComputeHashCode_Works()

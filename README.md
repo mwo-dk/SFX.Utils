@@ -17,16 +17,44 @@ This small collection, deals with date time and timers.
 
 #### (I)DateTimeProvider
 
-The ```IDateTimeProvider``` is a simple interface, that can deliver the current ```DateTimeOffset``` in UTC:
+The ```IDateTimeProvider``` is a simple interface, that can deliver the current ```DateTimeOffset``` either locally (on the running machine) or in UTC:
 
 ``` csharp
 public interface IDateTimeProvider
 {
+    DateTimeOffset GetNow();
     DateTimeOffset GetUtcNow();
 }
 ```
 
 Not the hardest interface, and even the youngest develper can figure out it's implementation. It's done many other places and in other ways, searching faking time or asking Rx how to deal with it, gives a lot of good and more advanced options. I like it, because it's simple to fake it in tests.
+
+#### (I)TimeZoneProvider
+
+The ```ITimeZoneProvider``` is another no-brainer, that delivers ```TimeZoneInfo```:
+
+``` csharp
+public interface ITimeZoneProvider 
+{
+    TimeZoneInfo GetLocal();
+    TimeZoneInfo GetUtc();
+    OperationResult<TimeZoneInfo> FindSystemTimeZoneById(string id);
+}
+``` 
+
+Again, no explanation should be required here. ```FindSystemTimeZoneById``` returns an ```OperationResult<TimeZoneInfo>```, which is due to the fact, that the underlying call to the static method by the same name in ```TimeZoneInfo``` can throw exceptions. ```OperationResult<>``` gives the caller the option of what kind of usage pattern to use. ```OperationResult<>``` is introduced below.
+
+#### (I)DateTimeConverter
+
+The ```IDateTimeConverter``` interface also should be managable to grasp for people without degrees in telepathy, universal healing and lots of thesises written about Area 51 and 9/11:
+
+``` csharp
+public interface IDateTimeConverter
+{
+    OperationResult<DateTimeOffset> Convert(DateTimeOffset dateTimeOffset, TimeZoneInfo timeZoneInfo);
+    OperationResult<DateTimeOffset> ToUtc(DateTimeOffset dateTimeOffset);
+}
+``` 
 
 #### (I)Timer and (I)TimerProvider
 
@@ -35,13 +63,13 @@ Similar to ```IDateTimeProvider``` an abstraction over timers and providers ther
 ``` csharp
 public interface ITimer : IDisposable
 {
-    void Start();
-    void Stop();
+    OperationResult<Unit> Start();
+    OperationResult<Unit> Stop();
 }
 
 public interface ITimerProvider
 {
-    ITimer Create(TimeSpan interval, Action handler, bool autoStart);
+    OperationResult<ITimer> Create(TimeSpan interval, Action handler, bool autoStart);
 }
 ```
 
@@ -126,25 +154,68 @@ public interface IAsyncInitializer
 
 The static class ```SFX.Utils.Infrastructure.HashCodeHelpers``` is just a simple wrapper for doing the standard way of computing the hashcode of complex objects utilizing the primes 19 and 31. The methods are:
 
-* ```ComputeHashCode(this int[] items) -> int```
-* ```ComputeHashCode<T>(this T[] items, Func<T, int> getHash) -> int```
-* ```ComputeHashCode<T>(this IEnumerable<T> items, Func<T, int> getHash) -> int```
-* ```ComputeHashCodeForObjectArray(params object[] items) -> int```
+* ```ComputeHashCode(this int[] items) -> OperationResult<int>```
+* ```ComputeHashCode<T>(this T[] items, Func<T, int> getHash) -> OperationResult<int>```
+* ```ComputeHashCode<T>(this IEnumerable<T> items, Func<T, int> getHash) -> OperationResult<int>```
+* ```ComputeHashCodeForObjectArray(params object[] items) -> OperationResult<int>```
 
 It should be fairly self-explanatory. Why provide a library for this? Reason is, that I myself often have been working with large in memory caches where ie. the key's have been fairly complex, so:
 
 * Pre-calculating the hash of these (immutable) objects upon (maybe) construction, returning that value in ```GetHashCode()``` and then 
 * Override ```IEquatable<>``` makes doing this convenient.
 
+### OperationResult<>
+
+```OperationResult<>``` is a simple structure, that enables various invocation patterns, not entirely unlike ```Nullable<>```. Its total implementation is:
+
+``` csharp
+    public struct OperationResult<T>
+    {
+        internal OperationResult(Exception error, T value) =>
+            (Error, Value) = (error, value);
+
+        public Exception Error { get; }
+        public T Value { get; }
+
+        public void Deconstruct(out bool success, out Exception error, out T value) =>
+            (success, error, value) = (Error is null, Error, Value);
+
+        public static implicit operator T(OperationResult<T> x)
+        {
+            if (!(x.Error is null))
+                throw x.Error;
+            else return x.Value;
+        }
+    }
+```
+
+That is: it can either represent a successfull or a failing result. As can be seen, it supports tuple deconstruction, meaning that:
+
+``` csharp
+static OperationResult<double> f() {...} // Does not throw any exception
+
+var opResult = f(); // opResult is an OperationResult<double>. No exceptions thrown.
+var (exn, result) = f(); // exn is of type Exception, non-null in case of error. result is a double. No exceptions thrown. 
+var result_ = f(); // result_ is a double. The implicit cast to double throws exception if there is (was) one.
+```
+
+For methods that otherwise would return nothing (```System.Void```), the type ```Unit``` has been introduced. 
+
 ## Usage F#
 
 The F# library delivers a few modules that essentially mostly wrap the C# library.
 
-### SFX.Utils.DateTime
-The ```DateTime``` module is simply a wrapper around the similar methods in the corresponding C# library:
+### SFX.Utils.Time
+The ```Time``` module is simply a wrapper around the similar methods in the corresponding C# library:
 
-* ```getUtcNow: unit -> DateTimeOffset```, and
 * ```createDateTimeProvider: unit -> DateTimeProvider```
+* ```createTimeZoneProvider: unit -> TimeZoneProvider```
+* ```createDateTimeConverter: unit -> DateTimeConverter```
+* ```getNow: unit -> DateTimeOffset```
+* ```getUtcNow: unit -> DateTimeOffset```
+* ```getLocalTimeZone: unit -> TimeZoneInfo```
+* ```getUtcTimeZone: unit -> TimeZoneInfo```
+* ```findSystemTimeZoneById: string -> Result<TimeZoneInfo, exn>```
 
 which do what you would expect.
 
@@ -152,10 +223,10 @@ which do what you would expect.
 The ```Timer``` module is also a more functional wrapper around the timer library:
 
 * ```createTimerProvider: unit -> TimerProvider```, creates a new ```TimerProvider```.
-* ```createTimer: TimeSpan -> (unit -> unit) -> bool -> ITimer```, creates a new ```ITimer```, where the first argument is the period, the second the handler and the last argument is a flag telling whether to automatically start the timer.
+* ```createTimer: TimeSpan -> (unit -> unit) -> bool -> Result<ITimer,exn>```, creates a new ```ITimer```, where the first argument is the period, the second the handler and the last argument is a flag telling whether to automatically start the timer.
 * ```startTimer: ITimer -> Result<unit, TimerError>```, starts a timer.
 * ```stopTimer: ITimer -> Result<unit, TimerError>```, stops a timer.
-* ```closeTimer: ITimer -> unit```, disposes off a timer.
+* ```closeTimer: ITimer -> Result<unit, TimerError>```, disposes off a timer.
 
 where ```TimerError``` is:
 

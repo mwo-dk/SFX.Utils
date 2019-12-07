@@ -3,42 +3,59 @@
 open SFX.ROP
 open SFX.Utils.Infrastructure
 
-module DateTime =
-    open System
+[<AutoOpen>]
+module Helpers =
+    let internal toRop (x: OperationResult<'a>) =
+        if x.Error |> isNull then x.Error |> fail
+        else x.Value |> succeed
 
-    let getUtcNow() = DateTimeOffset.UtcNow
-  
-    let createDateTimeProvider() = DateTimeProvider()
+module Time =
+
+    let private dateTimeProvider = DateTimeProvider()
+    let createDateTimeProvider = DateTimeProvider
+    let private timeZoneProvider = TimeZoneProvider()
+    let createTimeZoneProvider = TimeZoneProvider
+    let private dateTimeConverter = DateTimeConverter(timeZoneProvider)
+    let createDateTimeConverter = DateTimeConverter
+    
+    let getNow = dateTimeProvider.GetNow
+    let getUtcNow = dateTimeProvider.GetUtcNow
+
+    let getLocalTimeZone = timeZoneProvider.GetLocal
+    let getUtcTimeZone = timeZoneProvider.GetUtc
+    let findSystemTimeZoneById = 
+        timeZoneProvider.FindSystemTimeZoneById >> toRop
+
+    let convert dt tz = dateTimeConverter.Convert(dt, tz) |> toRop
+    let toUtc = dateTimeConverter.ToUtc >> toRop
 
 module Timer =
     open Microsoft.FSharp.Core
     open System
 
     let private timerProvider = TimerProvider()
-    let createTimerProvider() = TimerProvider()
+    let createTimerProvider = TimerProvider
 
     let createTimer interval (handler: unit -> unit) autoStart =
-        timerProvider.Create(interval, System.Action(handler), autoStart)
+        timerProvider.Create(interval, System.Action(handler), autoStart) |> toRop
 
     type TimerError =
     | TimerDisposed
     | Other of exn
 
+    let internal toRop (x: OperationResult<'a>) =
+        if x.Error |> isNull then x.Error |> Other |> fail
+        else x.Value |> succeed
     let startTimer (timer: ITimer) =
-        try
-            timer.Start() |> succeed
-        with
-        | :? ObjectDisposedException -> TimerDisposed |> fail
-        | exn -> exn |> Other |> fail
-
+        if timer |> isNull then ArgumentNullException("timer") :> exn |> Other |> fail
+        else timer.Start() |> toRop
     let stopTimer (timer: ITimer) =
-        try
-            timer.Stop() |> succeed
-        with
-        | :? ObjectDisposedException -> TimerDisposed |> fail
-        | exn -> exn |> Other |> fail
+        if timer |> isNull then ArgumentNullException("timer") :> exn |> Other |> fail
+        else timer.Stop() |> toRop
 
-    let closeTimer (timer: ITimer) = timer.Dispose()
+    let closeTimer (timer: ITimer) = 
+        if timer |> isNull then ArgumentNullException("timer") :> exn |> Other |> fail
+        else timer.Dispose() |> succeed
 
 module Initializable =
     type InitializableObject =

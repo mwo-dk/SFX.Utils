@@ -44,7 +44,7 @@ module Timer =
     | TimerDisposed
     | Other of exn
 
-    let internal toRop (x: OperationResult<'a>) =
+    let private toRop (x: OperationResult<'a>) =
         if x.Error |> isNull then x.Error |> Other |> fail
         else x.Value |> succeed
     let startTimer (timer: ITimer) =
@@ -98,8 +98,8 @@ module Initializer =
 
 module HashHelpers =
     type HashError = 
-    | IsNull
-    | IsEmpty
+    | Null
+    | Empty
 
     let inline private hash' prime1 prime2 x = 
         x |> Array.fold (fun acc n -> acc*prime2 + n) prime1
@@ -108,8 +108,8 @@ module HashHelpers =
         | false ->
             match x |> Array.isEmpty with
             | false -> x |> hash' prime1 prime2 |> succeed
-            | true -> IsEmpty |> fail
-        | true -> IsNull |> fail
+            | true -> Empty |> fail
+        | true -> Null |> fail
     let inline private hash''' x = x |> hash'' 19 31
     let inline private hash'''' (convert: 'a -> int) x =
         x |> Array.map convert |> hash'''
@@ -129,7 +129,7 @@ module HashHelpers =
         | O x -> 
             match x |> isNull with
             | false -> x |> Array.map (fun x -> x.GetHashCode()) |> hash'''
-            | true -> IsNull |> fail
+            | true -> Null |> fail
 
 module StringHelpers =
     open System

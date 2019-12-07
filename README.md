@@ -196,7 +196,7 @@ static OperationResult<double> f() {...} // Does not throw any exception
 
 var opResult = f(); // opResult is an OperationResult<double>. No exceptions thrown.
 var (exn, result) = f(); // exn is of type Exception, non-null in case of error. result is a double. No exceptions thrown. 
-var result_ = f(); // result_ is a double. The implicit cast to double throws exception if there is (was) one.
+double result_ = f(); // result_ is a double. The implicit cast to double throws exception if there is (was) one.
 ```
 
 For methods that otherwise would return nothing (```System.Void```), the type ```Unit``` has been introduced. 
@@ -232,6 +232,7 @@ where ```TimerError``` is:
 
 ``` fsharp
 type TimerError =
+| Null
 | TimerDisposed
 | Other of exn
 ```

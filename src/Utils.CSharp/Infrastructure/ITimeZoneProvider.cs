@@ -27,6 +27,6 @@ namespace SFX.Utils.Infrastructure
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        OperationResult<TimeZoneInfo> FindSystemTimeZoneById(string id);
+        Result<TimeZoneInfo> FindSystemTimeZoneById(string id);
     }
 }

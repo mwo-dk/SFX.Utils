@@ -5,7 +5,7 @@ open SFX.Utils.Infrastructure
 
 [<AutoOpen>]
 module Helpers =
-    let internal toRop (x: OperationResult<'a>) =
+    let internal toRop (x: Result<'a>) =
         if x.Error |> isNull then x.Error |> fail
         else x.Value |> succeed
 
@@ -44,7 +44,7 @@ module Timer =
     | TimerDisposed
     | Other of exn
 
-    let private toRop (x: OperationResult<'a>) =
+    let private toRop (x: Result<'a>) =
         if x.Error |> isNull then x.Error |> Other |> fail
         else x.Value |> succeed
     let startTimer (timer: ITimer) =

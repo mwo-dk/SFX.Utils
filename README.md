@@ -38,11 +38,11 @@ public interface ITimeZoneProvider
 {
     TimeZoneInfo GetLocal();
     TimeZoneInfo GetUtc();
-    OperationResult<TimeZoneInfo> FindSystemTimeZoneById(string id);
+    Result<TimeZoneInfo> FindSystemTimeZoneById(string id);
 }
 ``` 
 
-Again, no explanation should be required here. ```FindSystemTimeZoneById``` returns an ```OperationResult<TimeZoneInfo>```, which is due to the fact, that the underlying call to the static method by the same name in ```TimeZoneInfo``` can throw exceptions. ```OperationResult<>``` gives the caller the option of what kind of usage pattern to use. ```OperationResult<>``` is introduced below.
+Again, no explanation should be required here. ```FindSystemTimeZoneById``` returns an ```Result<TimeZoneInfo>```, which is due to the fact, that the underlying call to the static method by the same name in ```TimeZoneInfo``` can throw exceptions. ```Result<>``` gives the caller the option of what kind of usage pattern to use. ```Result<>``` is introduced below.
 
 #### (I)DateTimeConverter
 
@@ -51,8 +51,8 @@ The ```IDateTimeConverter``` interface also should be managable to grasp for peo
 ``` csharp
 public interface IDateTimeConverter
 {
-    OperationResult<DateTimeOffset> Convert(DateTimeOffset dateTimeOffset, TimeZoneInfo timeZoneInfo);
-    OperationResult<DateTimeOffset> ToUtc(DateTimeOffset dateTimeOffset);
+    Result<DateTimeOffset> Convert(DateTimeOffset dateTimeOffset, TimeZoneInfo timeZoneInfo);
+    Result<DateTimeOffset> ToUtc(DateTimeOffset dateTimeOffset);
 }
 ``` 
 
@@ -63,13 +63,13 @@ Similar to ```IDateTimeProvider``` an abstraction over timers and providers ther
 ``` csharp
 public interface ITimer : IDisposable
 {
-    OperationResult<Unit> Start();
-    OperationResult<Unit> Stop();
+    Result<Unit> Start();
+    Result<Unit> Stop();
 }
 
 public interface ITimerProvider
 {
-    OperationResult<ITimer> Create(TimeSpan interval, Action handler, bool autoStart);
+    Result<ITimer> Create(TimeSpan interval, Action handler, bool autoStart);
 }
 ```
 
@@ -154,24 +154,24 @@ public interface IAsyncInitializer
 
 The static class ```SFX.Utils.Infrastructure.HashCodeHelpers``` is just a simple wrapper for doing the standard way of computing the hashcode of complex objects utilizing the primes 19 and 31. The methods are:
 
-* ```ComputeHashCode(this int[] items) -> OperationResult<int>```
-* ```ComputeHashCode<T>(this T[] items, Func<T, int> getHash) -> OperationResult<int>```
-* ```ComputeHashCode<T>(this IEnumerable<T> items, Func<T, int> getHash) -> OperationResult<int>```
-* ```ComputeHashCodeForObjectArray(params object[] items) -> OperationResult<int>```
+* ```ComputeHashCode(this int[] items) -> Result<int>```
+* ```ComputeHashCode<T>(this T[] items, Func<T, int> getHash) -> Result<int>```
+* ```ComputeHashCode<T>(this IEnumerable<T> items, Func<T, int> getHash) -> Result<int>```
+* ```ComputeHashCodeForObjectArray(params object[] items) -> Result<int>```
 
 It should be fairly self-explanatory. Why provide a library for this? Reason is, that I myself often have been working with large in memory caches where ie. the key's have been fairly complex, so:
 
 * Pre-calculating the hash of these (immutable) objects upon (maybe) construction, returning that value in ```GetHashCode()``` and then 
 * Override ```IEquatable<>``` makes doing this convenient.
 
-### OperationResult<>
+### Result<>
 
-```OperationResult<>``` is a simple structure, that enables various invocation patterns, not entirely unlike ```Nullable<>```. Its total implementation is:
+```Result<>``` is a simple structure, that enables various invocation patterns, not entirely unlike ```Nullable<>```. Its total implementation is:
 
 ``` csharp
-public struct OperationResult<T>
+public struct Result<T>
 {
-    internal OperationResult(Exception error, T value) =>
+    internal Result(Exception error, T value) =>
         (Error, Value) = (error, value);
 
     public Exception Error { get; }
@@ -180,7 +180,7 @@ public struct OperationResult<T>
     public void Deconstruct(out bool success, out Exception error, out T value) =>
         (success, error, value) = (Error is null, Error, Value);
 
-    public static implicit operator T(OperationResult<T> x)
+    public static implicit operator T(Result<T> x)
     {
         if (!(x.Error is null))
             throw x.Error;
@@ -192,9 +192,9 @@ public struct OperationResult<T>
 That is: it can either represent a successfull or a failing result. As can be seen, it supports tuple deconstruction, meaning that:
 
 ``` csharp
-static OperationResult<double> f() {...} // Does not throw any exception
+static Result<double> f() {...} // Does not throw any exception
 
-var opResult = f(); // opResult is an OperationResult<double>. No exceptions thrown.
+var opResult = f(); // opResult is an Result<double>. No exceptions thrown.
 var (exn, result) = f(); // exn is of type Exception, non-null in case of error. result is a double. No exceptions thrown. 
 double result_ = f(); // result_ is a double. The implicit cast to double throws exception if there is (was) one.
 ```

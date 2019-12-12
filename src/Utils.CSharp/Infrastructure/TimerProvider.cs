@@ -8,18 +8,18 @@ namespace SFX.Utils.Infrastructure
     public sealed class TimerProvider : ITimerProvider
     {
         /// <inheritdoc/>
-        public OperationResult<ITimer> Create(TimeSpan interval, Action handler, bool autoStart)
+        public Result<ITimer> Create(TimeSpan interval, Action handler, bool autoStart)
         {
             try
             {
                 var result = new Timer(interval, handler);
                 if (autoStart)
                     result.Start();
-                return new OperationResult<ITimer>(default, result);
+                return new Result<ITimer>(result, default);
             }
             catch (Exception error)
             {
-                return new OperationResult<ITimer>(error, default);
+                return new Result<ITimer>(default, error);
             }
         }
     }

@@ -10,10 +10,10 @@ namespace SFX.Utils.Infrastructure
         /// <summary>
         /// Starts the timer
         /// </summary>
-        OperationResult<Unit> Start();
+        Result<Unit> Start();
         /// <summary>
         /// Stops the timer
         /// </summary>
-        OperationResult<Unit> Stop();
+        Result<Unit> Stop();
     }
 }

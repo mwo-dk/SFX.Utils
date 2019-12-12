@@ -17,28 +17,29 @@ namespace SFX.Utils.Infrastructure
         internal ITimeZoneProvider TimeZoneProvider { get; }
 
         /// <inheritdoc/>
-        public OperationResult<DateTimeOffset> Convert(DateTimeOffset dateTimeOffset, TimeZoneInfo timeZoneInfo)
+        public Result<DateTimeOffset> Convert(DateTimeOffset dateTimeOffset, TimeZoneInfo timeZoneInfo)
         {
             try
             {
-                return new OperationResult<DateTimeOffset>(default, TimeZoneInfo.ConvertTime(dateTimeOffset, timeZoneInfo));
+                
+                return new Result<DateTimeOffset>(TimeZoneInfo.ConvertTime(dateTimeOffset, timeZoneInfo), default);
             }
             catch (Exception error)
             {
-                return new OperationResult<DateTimeOffset>(error, default);
+                return new Result<DateTimeOffset>(default, error);
             }
         }
 
         /// <inheritdoc/>
-        public OperationResult<DateTimeOffset> ToUtc(DateTimeOffset dateTimeOffset)
+        public Result<DateTimeOffset> ToUtc(DateTimeOffset dateTimeOffset)
         {
             try
             {
-                return new OperationResult<DateTimeOffset>(default, TimeZoneInfo.ConvertTime(dateTimeOffset, TimeZoneProvider.GetUtc()));
+                return new Result<DateTimeOffset>(TimeZoneInfo.ConvertTime(dateTimeOffset, TimeZoneProvider.GetUtc()), default);
             }
             catch (Exception error)
             {
-                return new OperationResult<DateTimeOffset>(error, default);
+                return new Result<DateTimeOffset>(default, error);
             }
         }
     }

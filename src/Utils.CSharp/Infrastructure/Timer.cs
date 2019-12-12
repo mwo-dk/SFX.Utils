@@ -29,50 +29,50 @@ namespace SFX.Utils.Infrastructure
 
         internal long StartCount;
         /// <inheritdoc/>
-        public OperationResult<Unit> Start()
+        public Result<Unit> Start()
         {
             if (IsDisposed())
-                return new OperationResult<Unit>(new ObjectDisposedException(ObjectName), default);
+                return new Result<Unit>(default, new ObjectDisposedException(ObjectName));
 
             if (1L < Increment(ref StartCount))
             {
                 Decrement(ref StartCount);
-                return new OperationResult<Unit>(default, Unit.Value);
+                return new Result<Unit>(Unit.Value, default);
             }
 
             try
             {
                 InnerTimer = new System.Threading.Timer(new System.Threading.TimerCallback(_ => Handler()),
                     default, TimeSpan.Zero, Interval);
-                return new OperationResult<Unit>(default, Unit.Value);
+                return new Result<Unit>(Unit.Value, default);
             }
             catch (Exception error)
             {
-                return new OperationResult<Unit>(error, default);
+                return new Result<Unit>(default, error);
             }
         }
 
         /// <inheritdoc/>
-        public OperationResult<Unit> Stop()
+        public Result<Unit> Stop()
         {
             if (IsDisposed())
-                return new OperationResult<Unit>(new ObjectDisposedException(ObjectName), default);
+                return new Result<Unit>(default, new ObjectDisposedException(ObjectName));
 
             if (Decrement(ref StartCount) < 0L)
             {
                 Increment(ref StartCount);
-                return new OperationResult<Unit>(default, Unit.Value);
+                return new Result<Unit>(Unit.Value, default);
             }
 
             try
             {
                 InnerTimer.Dispose();
                 InnerTimer = default;
-                return new OperationResult<Unit>(default, Unit.Value);
+                return new Result<Unit>(Unit.Value, default);
             }
             catch (Exception error)
             {
-                return new OperationResult<Unit>(error, default);
+                return new Result<Unit>(default, error);
             }
         }
 

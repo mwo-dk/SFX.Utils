@@ -14,6 +14,6 @@ namespace SFX.Utils.Infrastructure
         /// <param name="handler">The handler</param>
         /// <param name="autoStart">Flag telling whether to automatically start the timer</param>
         /// <returns>The newly created <see cref="ITimer"/></returns>
-        OperationResult<ITimer> Create(TimeSpan interval, Action handler, bool autoStart);
+        Result<ITimer> Create(TimeSpan interval, Action handler, bool autoStart);
     }
 }

@@ -16,13 +16,13 @@ namespace SFX.Utils.Infrastructure
         /// <param name="dateTimeOffset">The source <see cref="DateTimeOffset"/></param>
         /// <param name="timeZoneInfo">The destination <see cref="TimeZoneInfo"/></param>
         /// <returns></returns>
-        OperationResult<DateTimeOffset> Convert(DateTimeOffset dateTimeOffset, TimeZoneInfo timeZoneInfo);
+        Result<DateTimeOffset> Convert(DateTimeOffset dateTimeOffset, TimeZoneInfo timeZoneInfo);
 
         /// <summary>
         /// Converts <paramref name="dateTimeOffset"/> to Utc
         /// </summary>
         /// <param name="dateTimeOffset">The source <see cref="DateTimeOffset"/></param>
         /// <returns></returns>
-        OperationResult<DateTimeOffset> ToUtc(DateTimeOffset dateTimeOffset);
+        Result<DateTimeOffset> ToUtc(DateTimeOffset dateTimeOffset);
     }
 }

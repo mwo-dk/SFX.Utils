@@ -14,15 +14,15 @@ namespace SFX.Utils.Infrastructure
         public TimeZoneInfo GetUtc() => TimeZoneInfo.Utc;
 
         /// <inheritdoc/>
-        public OperationResult<TimeZoneInfo> FindSystemTimeZoneById(string id)
+        public Result<TimeZoneInfo> FindSystemTimeZoneById(string id)
         {
             try
             {
-                return new OperationResult<TimeZoneInfo>(default, TimeZoneInfo.FindSystemTimeZoneById(id));
+                return new Result<TimeZoneInfo>(TimeZoneInfo.FindSystemTimeZoneById(id), default);
             }
             catch (Exception error)
             {
-                return new OperationResult<TimeZoneInfo>(error, default);
+                return new Result<TimeZoneInfo>(default, error);
             }
         }
     }

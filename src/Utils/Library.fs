@@ -3,12 +3,6 @@
 open SFX.ROP
 open SFX.Utils.Infrastructure
 
-[<AutoOpen>]
-module Helpers =
-    let internal toRop (x: Result<'a>) =
-        if x.Error |> isNull then x.Error |> fail
-        else x.Value |> succeed
-
 module Time =
 
     let private dateTimeProvider = DateTimeProvider()
@@ -24,10 +18,10 @@ module Time =
     let getLocalTimeZone = timeZoneProvider.GetLocal
     let getUtcTimeZone = timeZoneProvider.GetUtc
     let findSystemTimeZoneById = 
-        timeZoneProvider.FindSystemTimeZoneById >> toRop
+        timeZoneProvider.FindSystemTimeZoneById >> toResult
 
-    let convert dt tz = dateTimeConverter.Convert(dt, tz) |> toRop
-    let toUtc = dateTimeConverter.ToUtc >> toRop
+    let convert dt tz = dateTimeConverter.Convert(dt, tz) |> toResult
+    let toUtc = dateTimeConverter.ToUtc >> toResult
 
 module Timer =
     open Microsoft.FSharp.Core
@@ -37,22 +31,24 @@ module Timer =
     let createTimerProvider = TimerProvider
 
     let createTimer interval (handler: unit -> unit) autoStart =
-        timerProvider.Create(interval, System.Action(handler), autoStart) |> toRop
+        timerProvider.Create(interval, System.Action(handler), autoStart) |> toResult
 
     type TimerError =
     | Null
     | TimerDisposed
     | Other of exn
 
-    let private toRop (x: Result<'a>) =
-        if x.Error |> isNull then x.Error |> Other |> fail
-        else x.Value |> succeed
+    let private toResult (x: SFX.ROP.CSharp.Result<'a>) =
+        if x.Error |> isNull then () |> succeed
+        else 
+            if (x.Error :?> ObjectDisposedException) <> null then TimerDisposed |> fail
+            else x.Error |> Other |> fail
     let startTimer (timer: ITimer) =
         if timer |> isNull then Null |> fail
-        else timer.Start() |> toRop
+        else timer.Start() |> toResult
     let stopTimer (timer: ITimer) =
         if timer |> isNull then Null |> fail
-        else timer.Stop() |> toRop
+        else timer.Stop() |> toResult
     let closeTimer (timer: ITimer) = 
         if timer |> isNull then Null |> fail
         else timer.Dispose() |> succeed

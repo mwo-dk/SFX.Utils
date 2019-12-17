@@ -42,7 +42,7 @@ public interface ITimeZoneProvider
 }
 ``` 
 
-Again, no explanation should be required here. ```FindSystemTimeZoneById``` returns an ```Result<TimeZoneInfo>```, which is due to the fact, that the underlying call to the static method by the same name in ```TimeZoneInfo``` can throw exceptions. ```Result<>``` gives the caller the option of what kind of usage pattern to use. ```Result<>``` is introduced below.
+Again, no explanation should be required here. ```FindSystemTimeZoneById``` returns an ```Result<TimeZoneInfo>```, which is due to the fact, that the underlying call to the static method by the same name in ```TimeZoneInfo``` can throw exceptions. ```Result<>``` gives the caller the option of what kind of usage pattern to use. ```Result<>``` is a loan from [SFX.ROP.CSharp](https://www.nuget.org/packages/SFX.ROP.CSharp/) and introduced below.
 
 #### (I)DateTimeConverter
 
@@ -173,9 +173,9 @@ public struct Result<T>
 {
     internal Result(Exception error, T value) =>
         (Error, Value) = (error, value);
-
-    public Exception Error { get; }
+    
     public T Value { get; }
+    public Exception Error { get; }
 
     public void Deconstruct(out bool success, out Exception error, out T value) =>
         (success, error, value) = (Error is null, Error, Value);
@@ -199,7 +199,21 @@ var (exn, result) = f(); // exn is of type Exception, non-null in case of error.
 double result_ = f(); // result_ is a double. The implicit cast to double throws exception if there is (was) one.
 ```
 
-For methods that otherwise would return nothing (```System.Void```), the type ```Unit``` has been introduced. 
+For methods that otherwise would return nothing (```System.Void```), the type ```Unit``` has been introduced in the same project as ```Result<>```.
+
+Utilizing ```Result<>``` has to be done via the static class ```SFX.ROP.CSharp.Library```, and can be utilized in the following manner:
+
+``` csharp
+using static SFX.ROP.CSharp.Library;
+
+...
+
+Result<T> f() {
+    ...
+    if (ok) return Succeed(result); // result is T
+    else return Fail<T>(theErrorThatHappened); // theErrorThatHappened is some exception
+}
+```
 
 ## Usage F#
 

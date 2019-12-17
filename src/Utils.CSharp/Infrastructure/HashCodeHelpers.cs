@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SFX.ROP.CSharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using static SFX.ROP.CSharp.Library;
 
 namespace SFX.Utils.Infrastructure
 {
@@ -19,15 +21,15 @@ namespace SFX.Utils.Infrastructure
         internal static Result<int> ComputeHashCode(this int[] items, int prime1, int prime2)
         {
             if (items is null)
-                return new Result<int>(default, new ArgumentNullException(nameof(items)));
+                return Fail<int>(new ArgumentNullException(nameof(items)));
             if (items.Length == 0)
-                return new Result<int>(default, new ArgumentException("Cannot compute hash code of empty array", nameof(items)));
+                return Fail<int>(new ArgumentException("Cannot compute hash code of empty array", nameof(items)));
             unchecked
             {
                 var result = prime1;
                 for (var n = 0; n < items.Length; ++n)
                     result = prime2 * result + items[n];
-                return new Result<int>(result, default);
+                return Succeed(result);
             }
         }
 
@@ -49,11 +51,11 @@ namespace SFX.Utils.Infrastructure
         internal static Result<int> ComputeHashCode<T>(this T[] items, Func<T, int> getHash, int prime1, int prime2)
         {
             if (items is null)
-                return new Result<int>(default, new ArgumentNullException(nameof(items)));
+                return Fail<int>(new ArgumentNullException(nameof(items)));
             if (getHash is null)
-                return new Result<int>(default, new ArgumentNullException(nameof(getHash)));
+                return Fail<int>(new ArgumentNullException(nameof(getHash)));
             if (items.Length == 0)
-                return new Result<int>(default, new ArgumentException("Cannot compute hash code of empty array", nameof(items))); 
+                return Fail<int>(new ArgumentException("Cannot compute hash code of empty array", nameof(items))); 
             unchecked
             {
                 try
@@ -61,11 +63,11 @@ namespace SFX.Utils.Infrastructure
                     var result = prime1;
                     for (var n = 0; n < items.Length; ++n)
                         result = prime2 * result + getHash(items[n]);
-                    return new Result<int>(result, default);
+                    return Succeed(result);
                 }
                 catch (Exception error)
                 {
-                    return new Result<int>(default, error);
+                    return Fail<int>(error);
                 }
             }
         }
@@ -88,11 +90,11 @@ namespace SFX.Utils.Infrastructure
         internal static Result<int> ComputeHashCode<T>(this IEnumerable<T> items, Func<T, int> getHash, int prime1, int prime2)
         {
             if (items is null)
-                return new Result<int>(default, new ArgumentNullException(nameof(items)));
+                return Fail<int>(new ArgumentNullException(nameof(items)));
             if (getHash is null)
-                return new Result<int>(default, new ArgumentNullException(nameof(getHash)));
+                return Fail<int>(new ArgumentNullException(nameof(getHash)));
             if (!items.Any())
-                return new Result<int>(default, new ArgumentException("Cannot compute hash code of empty array", nameof(items)));
+                return Fail<int>(new ArgumentException("Cannot compute hash code of empty array", nameof(items)));
             unchecked
             {
                 try
@@ -100,11 +102,11 @@ namespace SFX.Utils.Infrastructure
                     var result = prime1;
                     foreach (var item in items)
                         result = prime2 * result + getHash(item);
-                    return new Result<int>(result, default);
+                    return Succeed(result);
                 }
                 catch (Exception error)
                 {
-                    return new Result<int>(default, error);
+                    return Fail<int>(error);
                 }
             }
         }

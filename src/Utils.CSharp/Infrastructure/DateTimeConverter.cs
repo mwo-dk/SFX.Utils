@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SFX.ROP.CSharp;
+using System;
+using static SFX.ROP.CSharp.Library;
 
 namespace SFX.Utils.Infrastructure
 {
@@ -22,11 +24,11 @@ namespace SFX.Utils.Infrastructure
             try
             {
                 
-                return new Result<DateTimeOffset>(TimeZoneInfo.ConvertTime(dateTimeOffset, timeZoneInfo), default);
+                return Succeed(TimeZoneInfo.ConvertTime(dateTimeOffset, timeZoneInfo));
             }
             catch (Exception error)
             {
-                return new Result<DateTimeOffset>(default, error);
+                return Fail<DateTimeOffset>(error);
             }
         }
 
@@ -35,11 +37,11 @@ namespace SFX.Utils.Infrastructure
         {
             try
             {
-                return new Result<DateTimeOffset>(TimeZoneInfo.ConvertTime(dateTimeOffset, TimeZoneProvider.GetUtc()), default);
+                return Succeed(TimeZoneInfo.ConvertTime(dateTimeOffset, TimeZoneProvider.GetUtc()));
             }
             catch (Exception error)
             {
-                return new Result<DateTimeOffset>(default, error);
+                return Fail<DateTimeOffset>(error);
             }
         }
     }

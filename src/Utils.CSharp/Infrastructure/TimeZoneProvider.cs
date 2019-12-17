@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SFX.ROP.CSharp;
+using System;
+using static SFX.ROP.CSharp.Library;
 
 namespace SFX.Utils.Infrastructure
 {
@@ -18,11 +20,11 @@ namespace SFX.Utils.Infrastructure
         {
             try
             {
-                return new Result<TimeZoneInfo>(TimeZoneInfo.FindSystemTimeZoneById(id), default);
+                return Succeed(TimeZoneInfo.FindSystemTimeZoneById(id));
             }
             catch (Exception error)
             {
-                return new Result<TimeZoneInfo>(default, error);
+                return Fail<TimeZoneInfo>(error);
             }
         }
     }

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SFX.ROP.CSharp;
+using System;
 using static System.Threading.Interlocked;
+using static SFX.ROP.CSharp.Library;
 
 namespace SFX.Utils.Infrastructure
 {
@@ -32,23 +34,23 @@ namespace SFX.Utils.Infrastructure
         public Result<Unit> Start()
         {
             if (IsDisposed())
-                return new Result<Unit>(default, new ObjectDisposedException(ObjectName));
+                return Fail<Unit>(new ObjectDisposedException(ObjectName));
 
             if (1L < Increment(ref StartCount))
             {
                 Decrement(ref StartCount);
-                return new Result<Unit>(Unit.Value, default);
+                return Succeed(Unit.Value);
             }
 
             try
             {
                 InnerTimer = new System.Threading.Timer(new System.Threading.TimerCallback(_ => Handler()),
                     default, TimeSpan.Zero, Interval);
-                return new Result<Unit>(Unit.Value, default);
+                return Succeed(Unit.Value);
             }
             catch (Exception error)
             {
-                return new Result<Unit>(default, error);
+                return Fail<Unit>(error);
             }
         }
 
@@ -56,23 +58,23 @@ namespace SFX.Utils.Infrastructure
         public Result<Unit> Stop()
         {
             if (IsDisposed())
-                return new Result<Unit>(default, new ObjectDisposedException(ObjectName));
+                return Fail<Unit>(new ObjectDisposedException(ObjectName));
 
             if (Decrement(ref StartCount) < 0L)
             {
                 Increment(ref StartCount);
-                return new Result<Unit>(Unit.Value, default);
+                return Succeed(Unit.Value);
             }
 
             try
             {
                 InnerTimer.Dispose();
                 InnerTimer = default;
-                return new Result<Unit>(Unit.Value, default);
+                return Succeed(Unit.Value);
             }
             catch (Exception error)
             {
-                return new Result<Unit>(default, error);
+                return Fail<Unit>(error);
             }
         }
 

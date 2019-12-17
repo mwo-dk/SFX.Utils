@@ -1,4 +1,6 @@
 ﻿using System;
+using SFX.ROP.CSharp;
+using static SFX.ROP.CSharp.Library;
 
 namespace SFX.Utils.Infrastructure
 {
@@ -15,11 +17,11 @@ namespace SFX.Utils.Infrastructure
                 var result = new Timer(interval, handler);
                 if (autoStart)
                     result.Start();
-                return new Result<ITimer>(result, default);
+                return Succeed(result as ITimer);
             }
             catch (Exception error)
             {
-                return new Result<ITimer>(default, error);
+                return Fail<ITimer>(error);
             }
         }
     }
